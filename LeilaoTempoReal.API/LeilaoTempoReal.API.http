@@ -1,0 +1,6 @@
+@LeilaoTempoReal.API_HostAddress = http://localhost:5115
+
+GET {{LeilaoTempoReal.API_HostAddress}}/weatherforecast/
+Accept: application/json
+
+###

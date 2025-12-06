@@ -1,0 +1,10 @@
+<Solution>
+  <Folder Name="/Itens de Solução/">
+    <File Path=".env" />
+    <File Path="docker-compose.yml" />
+  </Folder>
+  <Project Path="LeilaoTempoReal.API/LeilaoTempoReal.API.csproj" />
+  <Project Path="LeilaoTempoReal.Dominio/LeilaoTempoReal.Dominio.csproj" />
+  <Project Path="LeilaoTempoReal.Infraestrutura/LeilaoTempoReal.Infraestrutura.csproj" />
+  <Project Path="LeilaoTempoReal.Testes/LeilaoTempoReal.Testes.csproj" />
+</Solution>
