@@ -9,7 +9,7 @@ namespace LeilaoTempoReal.API.Hubs
         {
             await Groups.AddToGroupAsync(Context.ConnectionId, leilaoId.ToString());
 
-            await Clients.Caller.SendAsync("Notificacao", "Você entrou no leilão ${leilaoId}");
+            await Clients.Caller.SendAsync("Notificacao", $"Você entrou no leilão {leilaoId}");
         }
 
         public async Task SairDoLeilao(int leilaoId)
