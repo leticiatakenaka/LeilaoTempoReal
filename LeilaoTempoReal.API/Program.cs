@@ -1,4 +1,6 @@
 using LeilaoTempoReal.API.Hubs;
+using LeilaoTempoReal.API.Services;
+using LeilaoTempoReal.Application.Services;
 using LeilaoTempoReal.Dominio.Interfaces;
 using LeilaoTempoReal.Infraestrutura.Dados;
 using LeilaoTempoReal.Infraestrutura.Repositorios;
@@ -20,7 +22,8 @@ builder.Services.AddSignalR();
 builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
-builder.Services.AddScoped<LeilaoTempoReal.API.Services.LeilaoService>();
+builder.Services.AddScoped<LeilaoService>();
+builder.Services.AddScoped<INotificador, NotificadorSignalR>();
 
 var app = builder.Build();
 

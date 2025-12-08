@@ -21,6 +21,7 @@
   <ItemGroup>
     <ProjectReference Include="..\LeilaoTempoReal.Dominio\LeilaoTempoReal.Dominio.csproj" />
     <ProjectReference Include="..\LeilaoTempoReal.Infraestrutura\LeilaoTempoReal.Infraestrutura.csproj" />
+    <ProjectReference Include="..\LeilaoTempoReal.Application\LeilaoTempoReal.Application.csproj" />
   </ItemGroup>
 
 </Project>

@@ -1,5 +1,5 @@
 ﻿using LeilaoTempoReal.API.DTOs;
-using LeilaoTempoReal.API.Services;
+using LeilaoTempoReal.Application.Services;
 using LeilaoTempoReal.Dominio.Entidades;
 using LeilaoTempoReal.Dominio.Interfaces;
 using LeilaoTempoReal.Infraestrutura.Dados;
