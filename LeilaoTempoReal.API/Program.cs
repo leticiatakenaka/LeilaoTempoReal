@@ -20,6 +20,8 @@ builder.Services.AddSignalR();
 builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
+builder.Services.AddScoped<LeilaoTempoReal.API.Services.LeilaoService>();
+
 var app = builder.Build();
 
 app.UseSwagger();

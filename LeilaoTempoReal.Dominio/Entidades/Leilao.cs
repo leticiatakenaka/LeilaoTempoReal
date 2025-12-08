@@ -10,6 +10,8 @@ public class Leilao
     public DateTime DataFim { get; private set; }
     public bool Finalizado { get; private set; }
 
+    public string? UsuarioGanhador { get; set; }
+
     protected Leilao()
     {
         Nome = string.Empty;
@@ -22,10 +24,11 @@ public class Leilao
 
         Nome = nome;
         ValorInicial = valorInicial;
-        ValorAtual = valorInicial; 
+        ValorAtual = valorInicial;
         DataInicio = DateTime.Now;
         DataFim = dataFim;
         Finalizado = false;
+        UsuarioGanhador = null;
     }
 
     public void Finalizar()
