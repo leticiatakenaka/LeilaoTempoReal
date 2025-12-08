@@ -24,11 +24,9 @@ namespace LeilaoTempoReal.Infraestrutura.Migrations
 
             modelBuilder.Entity("LeilaoTempoReal.Dominio.Entidades.Leilao", b =>
                 {
-                    b.Property<int>("Id")
+                    b.Property<Guid>("Id")
                         .ValueGeneratedOnAdd()
-                        .HasColumnType("int");
-
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+                        .HasColumnType("uniqueidentifier");
 
                     b.Property<DateTime>("DataFim")
                         .HasColumnType("datetime2");

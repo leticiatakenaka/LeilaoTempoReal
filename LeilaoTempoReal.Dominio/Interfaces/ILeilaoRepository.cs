@@ -4,5 +4,5 @@ namespace LeilaoTempoReal.Dominio.Interfaces;
 
 public interface ILeilaoRepository
 {
-    Task<Leilao?> ObterPorIdAsync(int id);
+    Task<Leilao?> ObterPorIdAsync(Guid id);
 }

@@ -2,7 +2,7 @@
 
 public class Leilao
 {
-    public int Id { get; private set; }
+    public Guid Id { get; private set; }
     public string Nome { get; private set; }
     public decimal ValorInicial { get; private set; }
     public decimal ValorAtual { get; private set; }
@@ -22,6 +22,7 @@ public class Leilao
         if (valorInicial < 0) throw new ArgumentException("Valor não pode ser negativo");
         if (dataFim < DateTime.Now) throw new ArgumentException("Data fim deve ser futura");
 
+        Id = Guid.NewGuid();
         Nome = nome;
         ValorInicial = valorInicial;
         ValorAtual = valorInicial;

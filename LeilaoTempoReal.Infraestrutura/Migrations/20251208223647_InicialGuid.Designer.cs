@@ -12,8 +12,8 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace LeilaoTempoReal.Infraestrutura.Migrations
 {
     [DbContext(typeof(LeilaoDbContext))]
-    [Migration("20251208222423_AdicionaColunaUsuarioGanhador")]
-    partial class AdicionaColunaUsuarioGanhador
+    [Migration("20251208223647_InicialGuid")]
+    partial class InicialGuid
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -27,11 +27,9 @@ namespace LeilaoTempoReal.Infraestrutura.Migrations
 
             modelBuilder.Entity("LeilaoTempoReal.Dominio.Entidades.Leilao", b =>
                 {
-                    b.Property<int>("Id")
+                    b.Property<Guid>("Id")
                         .ValueGeneratedOnAdd()
-                        .HasColumnType("int");
-
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+                        .HasColumnType("uniqueidentifier");
 
                     b.Property<DateTime>("DataFim")
                         .HasColumnType("datetime2");

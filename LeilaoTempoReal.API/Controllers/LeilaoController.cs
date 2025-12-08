@@ -17,7 +17,7 @@ public class LeilaoController(ILeilaoRepository repository, LeilaoDbContext cont
 
     // GET api/leiloes/1
     [HttpGet("{id}")]
-    public async Task<IActionResult> ObterPorId(int id)
+    public async Task<IActionResult> ObterPorId(Guid id)
     {
         var leilao = await _repository.ObterPorIdAsync(id);
 
@@ -39,7 +39,7 @@ public class LeilaoController(ILeilaoRepository repository, LeilaoDbContext cont
     }
 
     [HttpPost("{id}/lances")]
-    public async Task<IActionResult> EnviarLance(int id, [FromBody] LanceDto dto)
+    public async Task<IActionResult> EnviarLance(Guid id, [FromBody] LanceDto dto)
     {
         var sucesso = await _service.DarLanceAsync(id, dto.Usuario, dto.Valor);
 

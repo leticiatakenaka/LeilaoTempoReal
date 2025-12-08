@@ -7,15 +7,13 @@ using System.Text.Json;
 
 namespace LeilaoTempoReal.API.Services;
 
-public class LeilaoService(ILeilaoRepository repository,
-                           IHubContext<LeilaoHub> hubContext,
+public class LeilaoService(IHubContext<LeilaoHub> hubContext,
                            IConnectionMultiplexer redisConnection)
 {
-    private readonly ILeilaoRepository _repository = repository;
     private readonly IHubContext<LeilaoHub> _hubContext = hubContext;
     private readonly IDatabase _redis = redisConnection.GetDatabase();
 
-    public async Task<bool> DarLanceAsync(int leilaoId, string usuario, decimal valor)
+    public async Task<bool> DarLanceAsync(Guid leilaoId, string usuario, decimal valor)
     {
         var chave = $"leilao:{leilaoId}";
 
@@ -23,38 +21,38 @@ public class LeilaoService(ILeilaoRepository repository,
         // ARGV[1] -> Valor do lance (decimal)
         // ARGV[2] -> Nome do usuário
         var script = @"
-        -- LOG 1: Avisa que começou e qual chave está buscando
-        redis.log(redis.LOG_WARNING, '--- DEBUG INICIO ---')
-        redis.log(redis.LOG_WARNING, 'Chave buscada: ' .. KEYS[1])
+            -- LOG 1: Avisa que começou e qual chave está buscando
+            redis.log(redis.LOG_WARNING, '--- DEBUG INICIO ---')
+            redis.log(redis.LOG_WARNING, 'Chave buscada: ' .. KEYS[1])
 
-        local jsonAtual = redis.call('GET', KEYS[1])
-        
-        if not jsonAtual then 
-            redis.log(redis.LOG_WARNING, 'ERRO: Chave nao encontrada no Redis!')
-            return 0 
-        end
+            local jsonAtual = redis.call('GET', KEYS[1])
+            
+            if not jsonAtual then 
+                redis.log(redis.LOG_WARNING, 'ERRO: Chave nao encontrada no Redis!')
+                return 0 
+            end
 
-        redis.log(redis.LOG_WARNING, 'JSON Encontrado: ' .. jsonAtual)
+            redis.log(redis.LOG_WARNING, 'JSON Encontrado: ' .. jsonAtual)
 
-        local leilao = cjson.decode(jsonAtual)
-        
-        -- LOG 2: Verifica os valores numéricos antes de comparar
-        local valorLance = tonumber(ARGV[1])
-        local valorAtual = tonumber(leilao.ValorAtual)
+            local leilao = cjson.decode(jsonAtual)
+            
+            -- LOG 2: Verifica os valores numéricos antes de comparar
+            local valorLance = tonumber(ARGV[1])
+            local valorAtual = tonumber(leilao.ValorAtual)
 
-        redis.log(redis.LOG_WARNING, 'Comparando Lance: ' .. tostring(valorLance) .. ' > Atual: ' .. tostring(valorAtual))
+            redis.log(redis.LOG_WARNING, 'Comparando Lance: ' .. tostring(valorLance) .. ' > Atual: ' .. tostring(valorAtual))
 
-        if valorLance > valorAtual then
-            leilao.ValorAtual = valorLance
-            leilao.UsuarioGanhador = ARGV[2]
-            local novoJson = cjson.encode(leilao)
-            redis.call('SET', KEYS[1], novoJson)
-            return 1 
-        else
-            redis.log(redis.LOG_WARNING, 'FALHA: Lance menor que o atual')
-            return 0 
-        end
-    ";
+            if valorLance > valorAtual then
+                leilao.ValorAtual = valorLance
+                leilao.UsuarioGanhador = ARGV[2]
+                local novoJson = cjson.encode(leilao)
+                redis.call('SET', KEYS[1], novoJson)
+                return 1 
+            else
+                redis.log(redis.LOG_WARNING, 'FALHA: Lance menor que o atual')
+                return 0 
+            end
+        ";
 
         var chaves = new RedisKey[] { chave };
 

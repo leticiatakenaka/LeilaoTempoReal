@@ -12,7 +12,7 @@ public class LeilaoRepository(LeilaoDbContext context, IConnectionMultiplexer re
     private readonly LeilaoDbContext _context = context;
     private readonly IDatabase _redis = redisConnection.GetDatabase();
 
-    public async Task<Leilao?> ObterPorIdAsync(int id)
+    public async Task<Leilao?> ObterPorIdAsync(Guid id)
     {
         var chave = $"leilao:{id}";
 
