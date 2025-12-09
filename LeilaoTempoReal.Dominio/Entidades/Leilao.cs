@@ -32,6 +32,12 @@ public class Leilao
         UsuarioGanhador = null;
     }
 
+    public void ReceberLance(decimal valor, string usuario)
+    {
+        ValorAtual = valor;
+        UsuarioGanhador = usuario;
+    }
+
     public void Finalizar()
     {
         Finalizado = true;

@@ -4,14 +4,9 @@ using Microsoft.AspNetCore.SignalR;
 
 namespace LeilaoTempoReal.API.Services;
 
-public class NotificadorSignalR : INotificador
+public class NotificadorSignalR(IHubContext<LeilaoHub> hubContext) : INotificador
 {
-    private readonly IHubContext<LeilaoHub> _hubContext;
-
-    public NotificadorSignalR(IHubContext<LeilaoHub> hubContext)
-    {
-        _hubContext = hubContext;
-    }
+    private readonly IHubContext<LeilaoHub> _hubContext = hubContext;
 
     public async Task NotificarNovoLance(Guid leilaoId, string usuario, decimal valor)
     {

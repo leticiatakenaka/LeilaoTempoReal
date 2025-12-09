@@ -9,13 +9,12 @@ namespace LeilaoTempoReal.API.Controllers;
 
 [ApiController]
 [Route("api/leiloes")]
-public class LeilaoController(ILeilaoRepository repository, LeilaoDbContext context, LeilaoService service) : ControllerBase
+public class LeilaoController(ILeilaoRepository repository, LeilaoDbContext context, ILeilaoService service) : ControllerBase
 {
     private readonly ILeilaoRepository _repository = repository;
     private readonly LeilaoDbContext _context = context;
-    private readonly LeilaoService _service = service;
+    private readonly ILeilaoService _service = service;
 
-    // GET api/leiloes/1
     [HttpGet("{id}")]
     public async Task<IActionResult> ObterPorId(Guid id)
     {
@@ -26,7 +25,6 @@ public class LeilaoController(ILeilaoRepository repository, LeilaoDbContext cont
         return Ok(leilao);
     }
 
-    // POST api/leiloes/seed
     [HttpPost("seed")]
     public async Task<IActionResult> Seed()
     {
@@ -35,19 +33,24 @@ public class LeilaoController(ILeilaoRepository repository, LeilaoDbContext cont
         _context.Leiloes.Add(leilao);
         await _context.SaveChangesAsync();
 
-        return Ok(new { Message = "Leilão criado!", Id = leilao.Id });
+        return Ok(new { Message = "Leilão criado!", leilao.Id });
     }
 
     [HttpPost("{id}/lances")]
     public async Task<IActionResult> EnviarLance(Guid id, [FromBody] LanceDto dto)
     {
-        var sucesso = await _service.DarLanceAsync(id, dto.Usuario, dto.Valor);
+        var resultado = await _service.DarLanceAsync(id, dto.Valor, dto.Usuario);
 
-        if (!sucesso)
+        if (resultado.IsSuccess)
         {
-            return BadRequest("Lance inválido. O valor deve ser maior que o atual ou o leilão encerrou.");
+            return Ok(new { Message = "Lance aceito com sucesso!" });
         }
 
-        return Ok(new { Message = "Lance aceito!" });
+        if (resultado.Message == "Leilão não encontrado.")
+        {
+            return NotFound(new { Error = resultado.Message });
+        }
+
+        return BadRequest(new { Error = resultado.Message });
     }
 }

@@ -1,5 +1,7 @@
+using LeilaoTempoReal.API.BackgroundServices;
 using LeilaoTempoReal.API.Hubs;
 using LeilaoTempoReal.API.Services;
+using LeilaoTempoReal.Application.Common;
 using LeilaoTempoReal.Application.Services;
 using LeilaoTempoReal.Dominio.Interfaces;
 using LeilaoTempoReal.Infraestrutura.Dados;
@@ -22,8 +24,22 @@ builder.Services.AddSignalR();
 builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
-builder.Services.AddScoped<LeilaoService>();
+builder.Services.AddScoped<ILeilaoService, LeilaoService>(); 
 builder.Services.AddScoped<INotificador, NotificadorSignalR>();
+builder.Services.AddSingleton<ILanceChannel, LanceChannel>();
+builder.Services.AddHostedService<PersistenciaLanceWorker>();
+builder.Services.AddDbContext<LeilaoDbContext>(options =>
+{
+    options.UseSqlServer(
+        builder.Configuration.GetConnectionString("LeilaoDb"),
+        sqlServerOptionsAction: sqlOptions =>
+        {
+            sqlOptions.EnableRetryOnFailure(
+                maxRetryCount: 5,
+                maxRetryDelay: TimeSpan.FromSeconds(10),
+                errorNumbersToAdd: null);
+        });
+});
 
 var app = builder.Build();
 
