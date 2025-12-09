@@ -11,13 +11,14 @@ using StackExchange.Redis;
 
 var builder = WebApplication.CreateBuilder(args);
 
+ThreadPool.SetMinThreads(200, 200);
+
 builder.Services.AddDbContext<LeilaoDbContext>(options =>
     options.UseSqlServer(builder.Configuration.GetConnectionString("LeilaoDb")));
 
 builder.Services.AddScoped<ILeilaoRepository, LeilaoRepository>();
 
 var redisConnection = ConnectionMultiplexer.Connect(builder.Configuration.GetConnectionString("Redis"));
-
 builder.Services.AddSingleton<IConnectionMultiplexer>(redisConnection);
 builder.Services.AddOpenApi();
 builder.Services.AddSignalR();
@@ -28,6 +29,7 @@ builder.Services.AddScoped<ILeilaoService, LeilaoService>();
 builder.Services.AddScoped<INotificador, NotificadorSignalR>();
 builder.Services.AddSingleton<ILanceChannel, LanceChannel>();
 builder.Services.AddHostedService<PersistenciaLanceWorker>();
+builder.Services.AddHostedService<LeilaoFinalizadoWorker>();
 builder.Services.AddDbContext<LeilaoDbContext>(options =>
 {
     options.UseSqlServer(
