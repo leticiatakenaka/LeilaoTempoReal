@@ -43,8 +43,20 @@ builder.Services.AddDbContext<LeilaoDbContext>(options =>
         });
 });
 
+builder.Services.AddCors(options =>
+{
+    options.AddPolicy("FrontEndAngular", policy =>
+    {
+        policy.WithOrigins("http://localhost:4200") 
+              .AllowAnyMethod()
+              .AllowAnyHeader()
+              .AllowCredentials(); 
+    });
+});
+
 var app = builder.Build();
 
+app.UseCors("FrontEndAngular");
 app.UseSwagger();
 app.UseSwaggerUI();
 app.UseHttpsRedirection();
