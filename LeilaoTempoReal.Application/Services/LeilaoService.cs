@@ -73,9 +73,9 @@ public class LeilaoService(INotificador notificador,
                 return Result.Fail("Erro desconhecido ao processar lance.");
         }
 
-        await _notificador.NotificarNovoLance(leilaoId, usuario, valor);
-
         _lanceChannel.TentarEscreverLance(leilaoId, valor, usuario);
+
+        await _notificador.NotificarNovoLance(leilaoId, usuario, valor);
 
         return Result.Success();
     }

@@ -7,5 +7,5 @@
   <Project Path="LeilaoTempoReal.Application/LeilaoTempoReal.Application.csproj" />
   <Project Path="LeilaoTempoReal.Dominio/LeilaoTempoReal.Dominio.csproj" />
   <Project Path="LeilaoTempoReal.Infraestrutura/LeilaoTempoReal.Infraestrutura.csproj" />
-  <Project Path="LeilaoTempoReal.Testes/LeilaoTempoReal.Testes.csproj" />
+  <Project Path="LeilaoTempoReal.Tests/LeilaoTempoReal.Tests.csproj" />
 </Solution>

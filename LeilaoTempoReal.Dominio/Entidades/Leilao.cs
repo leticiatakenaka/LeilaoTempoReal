@@ -17,7 +17,7 @@ public class Leilao
         Nome = string.Empty;
     }
 
-    public Leilao(string nome, decimal valorInicial, DateTime dataFim)
+    public Leilao(string nome, decimal valorInicial, DateTime dataFim, decimal valorAtual = 0)
     {
         if (valorInicial < 0) throw new ArgumentException("Valor não pode ser negativo");
         if (dataFim < DateTime.Now) throw new ArgumentException("Data fim deve ser futura");
@@ -25,7 +25,7 @@ public class Leilao
         Id = Guid.NewGuid();
         Nome = nome;
         ValorInicial = valorInicial;
-        ValorAtual = valorInicial;
+        ValorAtual = valorAtual == 0 ? valorInicial : valorAtual;
         DataInicio = DateTime.Now;
         DataFim = dataFim;
         Finalizado = false;

@@ -6,7 +6,7 @@ namespace LeilaoTempoReal.API.BackgroundServices;
 public class PersistenciaLanceWorker : BackgroundService
 {
     private readonly ILanceChannel _channel;
-    private readonly IServiceProvider _serviceProvider; // Necessário para criar escopo do banco
+    private readonly IServiceProvider _serviceProvider;
     private readonly ILogger<PersistenciaLanceWorker> _logger;
 
     public PersistenciaLanceWorker(ILanceChannel channel, IServiceProvider serviceProvider, ILogger<PersistenciaLanceWorker> logger)
