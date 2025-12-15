@@ -1,4 +1,5 @@
 using LeilaoTempoReal.API.BackgroundServices;
+using LeilaoTempoReal.API.Consumers;
 using LeilaoTempoReal.API.Hubs;
 using LeilaoTempoReal.API.Services;
 using LeilaoTempoReal.Application.Common;
@@ -6,6 +7,7 @@ using LeilaoTempoReal.Application.Services;
 using LeilaoTempoReal.Dominio.Interfaces;
 using LeilaoTempoReal.Infraestrutura.Dados;
 using LeilaoTempoReal.Infraestrutura.Repositorios;
+using MassTransit;
 using Microsoft.EntityFrameworkCore;
 using StackExchange.Redis;
 
@@ -27,8 +29,21 @@ builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 builder.Services.AddScoped<ILeilaoService, LeilaoService>(); 
 builder.Services.AddScoped<INotificador, NotificadorSignalR>();
-builder.Services.AddSingleton<ILanceChannel, LanceChannel>();
-builder.Services.AddHostedService<PersistenciaLanceWorker>();
+builder.Services.AddMassTransit(x =>
+{
+    x.AddConsumer<LanceCriadoConsumer>();
+
+    x.UsingRabbitMq((context, cfg) =>
+    {
+        cfg.Host("localhost", "/", h =>
+        {
+            h.Username("guest");
+            h.Password("guest");
+        });
+
+        cfg.ConfigureEndpoints(context);
+    });
+}); 
 builder.Services.AddHostedService<LeilaoFinalizadoWorker>();
 builder.Services.AddDbContext<LeilaoDbContext>(options =>
 {

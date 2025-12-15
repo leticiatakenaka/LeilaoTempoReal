@@ -1,7 +1,6 @@
 version: '3.4'
 
 services:
-  # Servi�o do Banco de Dados (SQL Server)
   sqlserver:
     image: mcr.microsoft.com/mssql/server:2022-latest
     container_name: leilao_sql
@@ -13,7 +12,6 @@ services:
     volumes:
       - sql_data:/var/opt/mssql
 
-  # Servi�o do Redis (Cache)
   redis:
     image: redis:alpine
     container_name: leilao_redis
@@ -22,6 +20,14 @@ services:
     volumes:
       - redis_data:/data
 
+  rabbitmq:
+      image: masstransit/rabbitmq:latest
+      ports:
+        - "5672:5672"   
+        - "15672:15672" 
+      environment:
+        - RABBITMQ_DEFAULT_USER=guest
+        - RABBITMQ_DEFAULT_PASS=guest
 volumes:
   sql_data:
   redis_data:
