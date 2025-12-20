@@ -53,4 +53,22 @@ public class LeilaoController(ILeilaoRepository repository, LeilaoDbContext cont
 
         return BadRequest(new { Error = resultado.Message });
     }
+
+    [HttpPost("{id}/finalizar")]
+    public async Task<IActionResult> FinalizarLance(Guid id)
+    {
+        var resultado = await _service.FinalizarLeilaoAsync(id);
+
+        if (resultado.IsSuccess)
+        {
+            return Ok(new { Message = "Leilão finalizado com sucesso!" });
+        }
+
+        if (resultado.Message == "Leilão não encontrado.")
+        {
+            return NotFound(new { Error = resultado.Message });
+        }
+
+        return BadRequest(new { Error = resultado.Message });
+    }
 }

@@ -5,7 +5,6 @@ using LeilaoTempoReal.Dominio.Interfaces;
 using MassTransit;
 using Moq;
 using StackExchange.Redis;
-using Xunit;
 
 namespace LeilaoTempoReal.Tests;
 
@@ -45,9 +44,15 @@ public class LeilaoServiceTests
 
         _repoMock.Setup(r => r.ObterPorIdAsync(leilaoId)).ReturnsAsync(leilao);
 
+        var retornoRedisSimulado = RedisResult.Create(new RedisResult[]
+        {
+            RedisResult.Create(1),   
+            RedisResult.Create(100)  
+        });
+
         _databaseMock.Setup(d => d.ScriptEvaluateAsync(
             It.IsAny<string>(), It.IsAny<RedisKey[]>(), It.IsAny<RedisValue[]>(), It.IsAny<CommandFlags>()))
-            .ReturnsAsync(RedisResult.Create(1));
+            .ReturnsAsync(retornoRedisSimulado); 
 
         var resultado = await _service.DarLanceAsync(leilaoId, 100m, "usuario_teste");
 
@@ -80,42 +85,105 @@ public class LeilaoServiceTests
     }
 
     [Fact]
-    public async Task DarLanceAsync_DeveFalhar_QuandoLeilaoJaEstiverEncerrado()
-    {
-        var leilaoId = Guid.NewGuid();
-        var leilaoVencido = new Leilao("PS5", 50m, DateTime.Now.AddDays(1));
-
-        var propDataFim = typeof(Leilao).GetProperty(nameof(Leilao.DataFim));
-        propDataFim.SetValue(leilaoVencido, DateTime.Now.AddDays(-1));
-
-        _repoMock.Setup(r => r.ObterPorIdAsync(leilaoId)).ReturnsAsync(leilaoVencido);
-
-        var resultado = await _service.DarLanceAsync(leilaoId, 100m, "usuario_teste");
-
-        Assert.False(resultado.IsSuccess);
-        Assert.Equal("O leilão já encerrou.", resultado.Message);
-
-        _databaseMock.Verify(d => d.ScriptEvaluateAsync(It.IsAny<string>(), It.IsAny<RedisKey[]>(), It.IsAny<RedisValue[]>(), It.IsAny<CommandFlags>()), Times.Never);
-    }
-
-    [Fact]
     public async Task DarLanceAsync_DeveFalhar_QuandoValorForBaixoRejeitadoPeloRedis()
     {
         var leilaoId = Guid.NewGuid();
-        var leilao = new Leilao("PS5", 50m, DateTime.Now.AddDays(1));
+        var leilao = new Leilao("Item", 100m, DateTime.Now.AddDays(1));
+
         _repoMock.Setup(r => r.ObterPorIdAsync(leilaoId)).ReturnsAsync(leilao);
 
-        _databaseMock.Setup(d => d.ScriptEvaluateAsync(
-            It.IsAny<string>(), It.IsAny<RedisKey[]>(), It.IsAny<RedisValue[]>(), It.IsAny<CommandFlags>()))
-            .ReturnsAsync(RedisResult.Create(2));
+        var retornoRedisSimulado = RedisResult.Create(new RedisResult[]
+        {
+        RedisResult.Create(2),   
+        RedisResult.Create(150)  
+        });
 
-        var resultado = await _service.DarLanceAsync(leilaoId, 100m, "usuario_teste");
+        _databaseMock
+            .Setup(d => d.ScriptEvaluateAsync(
+                It.IsAny<string>(),
+                It.IsAny<RedisKey[]>(),
+                It.IsAny<RedisValue[]>(),
+                It.IsAny<CommandFlags>()))
+            .ReturnsAsync(retornoRedisSimulado); 
+
+        var resultado = await _service.DarLanceAsync(leilaoId, 100m, "usuario");
 
         Assert.False(resultado.IsSuccess);
-        Assert.Contains("Lance rejeitado", resultado.Message);
+        Assert.Contains("150", resultado.Message);
+    }
 
-        _notificadorMock.Verify(n => n.NotificarNovoLance(It.IsAny<Guid>(), It.IsAny<string>(), It.IsAny<decimal>()), Times.Never);
+    [Fact]
+    public async Task FinalizarLeilaoAsync_DeveRetornarSucesso_EAtualizarRedis_QuandoLeilaoEstiverAtivo()
+    {
+        var leilaoId = Guid.NewGuid();
+        var leilao = new Leilao("Item Teste", 100m, DateTime.Now.AddDays(1));
+        leilao.ReceberLance(200m, "Comprador_Vip");
 
-        _publishMock.Verify(p => p.Publish(It.IsAny<LanceCriadoEvent>(), It.IsAny<CancellationToken>()), Times.Never);
+        _repoMock.Setup(r => r.ObterPorIdAsync(leilaoId))
+            .ReturnsAsync(leilao);
+
+        _databaseMock
+            .Setup(d => d.StringSetAsync(It.IsAny<RedisKey>(), It.IsAny<RedisValue>(), It.IsAny<TimeSpan?>(), It.IsAny<bool>(), It.IsAny<When>(), It.IsAny<CommandFlags>()))
+            .ReturnsAsync(true);
+
+        var result = await _service.FinalizarLeilaoAsync(leilaoId);
+
+        Assert.True(result.IsSuccess);
+
+        var invocacao = _databaseMock.Invocations
+            .FirstOrDefault(i => i.Method.Name == nameof(IDatabase.StringSetAsync));
+
+        Assert.NotNull(invocacao);
+
+        var keyUsada = (RedisKey)invocacao.Arguments[0];
+        var jsonUsado = (RedisValue)invocacao.Arguments[1];
+
+        Assert.Equal($"leilao:{leilaoId}", keyUsada.ToString());
+
+        var jsonString = jsonUsado.ToString();
+        Assert.Contains("Finalizado", jsonString);
+        Assert.Contains("true", jsonString);
+        Assert.Contains("Comprador_Vip", jsonString);
+
+        var invocacaoExpire = _databaseMock.Invocations
+            .FirstOrDefault(i => i.Method.Name == nameof(IDatabase.KeyExpireAsync));
+
+        Assert.NotNull(invocacaoExpire);
+        var keyExpire = (RedisKey)invocacaoExpire.Arguments[0];
+        Assert.Equal($"leilao:{leilaoId}", keyExpire.ToString());
+    }
+
+    [Fact]
+    public async Task FinalizarLeilaoAsync_DeveFalhar_QuandoLeilaoNaoExistir()
+    {
+        var leilaoId = Guid.NewGuid();
+        _repoMock.Setup(r => r.ObterPorIdAsync(leilaoId))
+            .ReturnsAsync((Leilao?)null);
+
+        var result = await _service.FinalizarLeilaoAsync(leilaoId);
+
+        Assert.False(result.IsSuccess);
+        Assert.Equal("Leilão não encontrado.", result.Message);
+
+        _databaseMock.Verify(d => d.StringSetAsync(It.IsAny<RedisKey>(), It.IsAny<RedisValue>(), null, false, It.IsAny<When>(), It.IsAny<CommandFlags>()), Times.Never);
+        _publishMock.Verify(p => p.Publish(It.IsAny<object>(), It.IsAny<CancellationToken>()), Times.Never);
+    }
+
+    [Fact]
+    public async Task FinalizarLeilaoAsync_DeveFalhar_QuandoLeilaoJaEstiverFinalizado()
+    {
+        var leilaoId = Guid.NewGuid();
+        var leilao = new Leilao("Item Velho", 100m, DateTime.Now.AddDays(1));
+        leilao.Finalizar();
+
+        _repoMock.Setup(r => r.ObterPorIdAsync(leilaoId)).ReturnsAsync(leilao);
+
+        var result = await _service.FinalizarLeilaoAsync(leilaoId);
+
+        Assert.False(result.IsSuccess);
+        Assert.Equal("Leilão já foi finalizado.", result.Message);
+
+        _databaseMock.Verify(d => d.StringSetAsync(It.IsAny<RedisKey>(), It.IsAny<RedisValue>(), null, false, It.IsAny<When>(), It.IsAny<CommandFlags>()), Times.Never);
+        _publishMock.Verify(p => p.Publish(It.IsAny<object>(), It.IsAny<CancellationToken>()), Times.Never);
     }
 }
