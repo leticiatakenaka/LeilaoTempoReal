@@ -25,7 +25,7 @@ O diagrama abaixo ilustra como o sistema processou um "salto" de valor (de 7179 
 sequenceDiagram
     participant User as Loop de Teste
     participant Network as Rede/Internet
-    participant Redis as Redis (Juiz)
+    participant Redis as Redis (Gatekeeper)
 
     Note over User: Dispara rajada: 7179... até... 7287
 
@@ -42,7 +42,7 @@ sequenceDiagram
     rect rgb(235, 255, 235)
         Note right of User: O "Veloz"
         User->>Network: Envia 7287 (Rápido!)
-        Network->>Redis: Entrega 7287 (Fura Fila)
+        Network->>Redis: Entrega 7287 (Chegou antes)
         Redis-->>User: ✅ Aceito (Novo Topo: 7287)
     end
 
