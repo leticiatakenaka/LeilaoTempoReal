@@ -1,7 +1,9 @@
 ﻿using LeilaoTempoReal.Application.Common;
 using LeilaoTempoReal.Dominio.Interfaces;
-using StackExchange.Redis;
 using MassTransit;
+using StackExchange.Redis;
+using System.Drawing;
+using System.Text.Json;
 
 namespace LeilaoTempoReal.Application.Services;
 
@@ -45,16 +47,23 @@ public class LeilaoService(INotificador notificador,
                 ";
 
         var valores = new RedisValue[]
+                {
+            valor.ToString(System.Globalization.CultureInfo.InvariantCulture),
+            usuario
+                };
+
+        var retornoRedis = await _redis.ScriptEvaluateAsync(script, [chave], valores);
+
+        if (retornoRedis.IsNull)
         {
-        valor.ToString(System.Globalization.CultureInfo.InvariantCulture),
-        usuario
-        };
+            return Result.Fail("Erro crítico: O script Redis não retornou resultado.");
+        }
 
-        var resultadoRedis = (RedisResult[])await _redis.ScriptEvaluateAsync(script, [chave], valores);
+        var resultadoArray = (RedisResult[])retornoRedis!;
 
-        var codigoRetorno = (int)resultadoRedis[0];
+        var codigoRetorno = (int)resultadoArray[0];
 
-        var valorNoRedis = (decimal)(double)resultadoRedis[1];
+        var valorNoRedis = (decimal)(double)resultadoArray[1];
 
         switch (codigoRetorno)
         {
@@ -73,6 +82,29 @@ public class LeilaoService(INotificador notificador,
 
         await _bus.Publish(new LanceCriadoEvent(leilaoId, valor, usuario));
         await _notificador.NotificarNovoLance(leilaoId, usuario, valor);
+
+        return Result.Success();
+    }
+
+    public async Task<Result> FinalizarLeilaoAsync(Guid leilaoId)
+    {
+        var leilao = await _repository.ObterPorIdAsync(leilaoId);
+
+        if (leilao == null) return Result.Fail("Leilão não encontrado.");
+        if (leilao.Finalizado) return Result.Fail("Leilão já foi finalizado.");
+
+        await _bus.Publish(new LeilaoFinalizadoEvent(leilaoId));
+
+        leilao.Finalizar(); 
+
+        var jsonAtualizado = JsonSerializer.Serialize(leilao);
+        var chave = $"leilao:{leilaoId}";
+
+        await _redis.StringSetAsync(chave, jsonAtualizado);
+
+        await _redis.KeyExpireAsync(chave, TimeSpan.FromMinutes(10));
+
+        await _notificador.NotificarLeilaoFinalizado(leilaoId, leilao.UsuarioGanhador ?? "Ninguém", leilao.ValorAtual);
 
         return Result.Success();
     }

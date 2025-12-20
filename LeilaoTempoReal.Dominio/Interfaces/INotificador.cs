@@ -7,4 +7,5 @@ namespace LeilaoTempoReal.Dominio.Interfaces;
 public interface INotificador
 {
     Task NotificarNovoLance(Guid leilaoId, string usuario, decimal valor);
+    Task NotificarLeilaoFinalizado(Guid leilaoId, string usuario, decimal valor);
 }

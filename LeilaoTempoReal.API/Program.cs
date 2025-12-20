@@ -1,8 +1,6 @@
-using LeilaoTempoReal.API.BackgroundServices;
 using LeilaoTempoReal.API.Consumers;
 using LeilaoTempoReal.API.Hubs;
 using LeilaoTempoReal.API.Services;
-using LeilaoTempoReal.Application.Common;
 using LeilaoTempoReal.Application.Services;
 using LeilaoTempoReal.Dominio.Interfaces;
 using LeilaoTempoReal.Infraestrutura.Dados;
@@ -20,8 +18,12 @@ builder.Services.AddDbContext<LeilaoDbContext>(options =>
 
 builder.Services.AddScoped<ILeilaoRepository, LeilaoRepository>();
 
-var redisConnection = ConnectionMultiplexer.Connect(builder.Configuration.GetConnectionString("Redis"));
-builder.Services.AddSingleton<IConnectionMultiplexer>(redisConnection);
+var connectionString = builder.Configuration.GetConnectionString("Redis")
+    ?? throw new Exception("Faltou a connection string do Redis no appsettings!");
+
+var redisConnection = ConnectionMultiplexer.Connect(connectionString);
+
+builder.Services.AddSingleton<IConnectionMultiplexer>(redisConnection); 
 builder.Services.AddOpenApi();
 builder.Services.AddSignalR();
 builder.Services.AddControllers();
@@ -32,6 +34,7 @@ builder.Services.AddScoped<INotificador, NotificadorSignalR>();
 builder.Services.AddMassTransit(x =>
 {
     x.AddConsumer<LanceCriadoConsumer>();
+    x.AddConsumer<LeilaoFinalizadoConsumer>();
 
     x.UsingRabbitMq((context, cfg) =>
     {
@@ -44,7 +47,6 @@ builder.Services.AddMassTransit(x =>
         cfg.ConfigureEndpoints(context);
     });
 }); 
-builder.Services.AddHostedService<LeilaoFinalizadoWorker>();
 builder.Services.AddDbContext<LeilaoDbContext>(options =>
 {
     options.UseSqlServer(

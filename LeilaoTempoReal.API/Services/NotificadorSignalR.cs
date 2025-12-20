@@ -13,4 +13,10 @@ public class NotificadorSignalR(IHubContext<LeilaoHub> hubContext) : INotificado
         await _hubContext.Clients.Group(leilaoId.ToString())
             .SendAsync("ReceberNovoLance", usuario, valor);
     }
+
+    public async Task NotificarLeilaoFinalizado(Guid leilaoId, string usuario, decimal valor)
+    {
+        await _hubContext.Clients.Group(leilaoId.ToString())
+            .SendAsync("ReceberFinalizado", usuario, valor);
+    }
 }
