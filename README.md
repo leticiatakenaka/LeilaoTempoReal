@@ -10,7 +10,50 @@ O projeto utiliza uma arquitetura orientada a eventos (**Event-Driven**) para ga
 ![Badge SignalR](https://img.shields.io/badge/SignalR-Realtime-blue)
 
 ---
+## 🧪 Cenário de Teste: Concorrência (Race Condition)
 
+Para validar a robustez da arquitetura, realizei um teste de estresse simulando condições reais de rede, onde a ordem de chegada das requisições não é garantida.
+
+**O Teste:**
+- Disparo de 150 lances simultâneos.
+- O sistema utilizou o **Redis** como "Gatekeeper" para filtrar lances menores que o atual.
+
+**O Resultado:**
+O diagrama abaixo ilustra como o sistema processou um "salto" de valor (de 7179 para 7287), rejeitando automaticamente as requisições atrasadas que traziam valores menores, garantindo a integridade do leilão.
+
+```mermaid
+sequenceDiagram
+    participant User as Loop de Teste
+    participant Network as Rede/Internet
+    participant Redis as Redis (Juiz)
+
+    Note over User: Dispara rajada: 7179... até... 7287
+
+    User->>Network: Envia 7179
+    Network->>Redis: Entrega 7179
+    Redis-->>User: ✅ Aceito (Topo: 7179)
+
+    rect rgb(255, 235, 235)
+        Note right of User: O "Atraso" da Rede
+        User->>Network: Envia 7180...7286 (Lentos)
+        Note right of Network: Pacotes trafegando...
+    end
+
+    rect rgb(235, 255, 235)
+        Note right of User: O "Veloz"
+        User->>Network: Envia 7287 (Rápido!)
+        Network->>Redis: Entrega 7287 (Fura Fila)
+        Redis-->>User: ✅ Aceito (Novo Topo: 7287)
+    end
+
+    Note over Redis: AGORA chegam os atrasados...
+
+    Network->>Redis: Entrega 7200
+    Redis-->>User: ❌ Rejeitado (7200 < 7287)
+
+    Network->>Redis: Entrega 7250
+    Redis-->>User: ❌ Rejeitado (7250 < 7287)
+```
 ## 🚀 Arquitetura e Fluxo de Dados
 
 O sistema resolve o problema clássico de **race condition** (condição de corrida) em leilões disputados e garante **Zero Data Loss**.
